@@ -1,6 +1,6 @@
 // Mapbox 配置
 const MAPBOX_CONFIG = {
-    accessToken: 'YOUR_MAPBOX_TOKEN_HERE', // 替换为您的token
+    accessToken: 'pk.eyJ1IjoibmFuNm9rIiwiYSI6ImNtazB2bTYxMTdhNnkzZHB1cXN4bTRmb3UifQ.c6BNgPAE-3qtewe22CGvyQ', // 替换为您的token
     style: 'mapbox://styles/mapbox/streets-v12', // 地图样式
     center: [114.1694, 22.3193], // 香港中心坐标 [lng, lat]
     zoom: 12,
