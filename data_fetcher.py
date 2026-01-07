@@ -1,131 +1,436 @@
-import requests
-import json
-from datetime import datetime
-from database import db, BusRoute, BusStop
-import time
+/* 基础重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-class DataFetcher:
-    def __init__(self, api_endpoints):
-        self.api_endpoints = api_endpoints
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'HongKongBusTracker/1.0',
-            'Accept': 'application/json'
-        })
+body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    width: 350px;
+    background: linear-gradient(180deg, #2c3e50 0%, #1a2530 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-header .subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 300;
+}
+
+/* 控制面板 */
+.control-panel {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.filter-section, .stats-section, .search-section, .actions-section {
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-section h3, .stats-section h3, .search-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4dabf7;
+}
+
+.filter-group {
+    margin-bottom: 15px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.company-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.company-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.company-btn.active {
+    background: #4dabf7 !important;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(77, 171, 247, 0.5);
+}
+
+.company-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+#route-filter {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+/* 统计卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.update-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* 搜索框 */
+.search-box {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.search-box input {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+#search-btn {
+    padding: 10px 15px;
+    background: #4dabf7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 操作按钮 */
+.actions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.action-btn.primary {
+    background: #4dabf7;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.action-btn.primary:hover {
+    background: #339af0;
+}
+
+/* 页脚 */
+.sidebar-footer {
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: 0.8rem;
+    opacity: 0.7;
+    text-align: center;
+}
+
+.version {
+    margin-top: 5px;
+    font-size: 0.7rem;
+}
+
+/* 地图容器 */
+.map-container {
+    flex-grow: 1;
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* 地图控制按钮 */
+.map-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.map-control-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    background: white;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.map-control-btn:hover {
+    background: #f8f9fa;
+    transform: scale(1.1);
+}
+
+/* 车辆详情面板 */
+.vehicle-details-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 300px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.3s;
+    max-height: 400px;
+}
+
+.vehicle-details-panel.active {
+    transform: translateY(0);
+}
+
+.panel-header {
+    padding: 15px;
+    background: #2c3e50;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.panel-content {
+    padding: 15px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* 地图图例 */
+.map-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    max-width: 200px;
+}
+
+.map-legend h4 {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+}
+
+/* Toast通知 */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.toast {
+    background: #2c3e50;
+    color: white;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 300px;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
     
-    def fetch_json(self, url, max_retries=3):
-        """获取JSON数据，带重试机制"""
-        for attempt in range(max_retries):
-            try:
-                response = self.session.get(url, timeout=10)
-                response.raise_for_status()
-                return response.json()
-            except requests.exceptions.RequestException as e:
-                if attempt == max_retries - 1:
-                    print(f"获取数据失败: {url}, 错误: {e}")
-                    return None
-                time.sleep(2 ** attempt)  # 指数退避
-        return None
+    .sidebar {
+        width: 100%;
+        height: 40vh;
+    }
     
-    def update_static_data(self):
-        """更新线路和站点静态数据（以九巴为例）"""
-        print("开始更新九巴静态数据...")
-        
-        # 1. 获取线路列表
-        routes_data = self.fetch_json(self.api_endpoints["kmb"]["route_list"])
-        if routes_data and 'data' in routes_data:
-            for route_info in routes_data['data']:
-                route = BusRoute(
-                    route_id=route_info.get('route'),
-                    company='KMB',
-                    route_number=route_info.get('route'),
-                    orig_tc=route_info.get('orig_tc', ''),
-                    orig_en=route_info.get('orig_en', ''),
-                    dest_tc=route_info.get('dest_tc', ''),
-                    dest_en=route_info.get('dest_en', ''),
-                    service_type=route_info.get('service_type', '1')
-                )
-                db.session.merge(route)
-            
-            db.session.commit()
-            print(f"已更新 {len(routes_data['data'])} 条线路")
-        
-        # 2. 获取站点列表（分批获取，避免数据量太大）
-        print("开始更新站点数据...")
-        stops_url = self.api_endpoints["kmb"]["stop_list"]
-        stops_data = self.fetch_json(stops_url)
-        
-        if stops_data and 'data' in stops_data:
-            batch_size = 100
-            for i in range(0, len(stops_data['data']), batch_size):
-                batch = stops_data['data'][i:i+batch_size]
-                for stop_info in batch:
-                    stop = BusStop(
-                        stop_id=stop_info.get('stop'),
-                        name_tc=stop_info.get('name_tc', ''),
-                        name_en=stop_info.get('name_en', ''),
-                        latitude=stop_info.get('lat', 0),
-                        longitude=stop_info.get('long', 0)
-                    )
-                    db.session.merge(stop)
-                
-                db.session.commit()
-                print(f"已处理站点: {i+len(batch)}/{len(stops_data['data'])}")
-        
-        print("静态数据更新完成")
+    .map-container {
+        height: 60vh;
+    }
     
-    def fetch_eta_for_route(self, route_id, direction='outbound'):
-        """获取指定线路的ETA数据"""
-        # 九巴ETA API需要service_type，这里默认为1（常规服务）
-        service_type = '1'
-        
-        # 构建ETA API URL
-        url = self.api_endpoints["kmb"]["route_eta"].format(
-            route=route_id,
-            service_type=service_type
-        )
-        
-        eta_data = self.fetch_json(url)
-        
-        if eta_data and 'data' in eta_data:
-            # 过滤指定方向的ETA数据
-            filtered_data = []
-            for eta in eta_data['data']:
-                if eta.get('dir') == direction:
-                    filtered_data.append({
-                        'route': route_id,
-                        'direction': direction,
-                        'stop_id': eta.get('stop'),
-                        'eta': eta.get('eta'),
-                        'eta_seq': eta.get('eta_seq'),
-                        'rmk_tc': eta.get('rmk_tc', ''),
-                        'rmk_en': eta.get('rmk_en', ''),
-                        'timestamp': datetime.now().isoformat()
-                    })
-            
-            return filtered_data
-        
-        return None
-    
-    def fetch_all_companies_eta(self, stop_id):
-        """获取指定站点的所有公司ETA数据（用于聚合）"""
-        all_eta = []
-        
-        # 获取城巴数据
-        if 'ctb' in self.api_endpoints:
-            ctb_url = self.api_endpoints['ctb']['stop_eta'].format(stop_id=stop_id)
-            ctb_data = self.fetch_json(ctb_url)
-            if ctb_data and 'data' in ctb_data:
-                for eta in ctb_data['data']:
-                    eta['company'] = 'CTB'
-                    all_eta.append(eta)
-        
-        # 获取九巴数据
-        kmb_url = self.api_endpoints["kmb"]["eta"] + f"?stop={stop_id}"
-        kmb_data = self.fetch_json(kmb_url)
-        if kmb_data and 'data' in kmb_data:
-            for eta in kmb_data['data']:
-                eta['company'] = 'KMB'
-                all_eta.append(eta)
-        
-        return all_eta
+    .vehicle-details-panel {
+        width: calc(100% - 40px);
+    }
+}
