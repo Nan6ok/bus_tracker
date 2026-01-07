@@ -1,32 +1,39 @@
-# 香港公交API端点配置
-API_ENDPOINTS = {
-    # 九巴/龙运 API (来自 data.gov.hk)
-    "kmb": {
-        "route_list": "https://data.etabus.gov.hk/v1/transport/kmb/route/",
-        "route_stop": "https://data.etabus.gov.hk/v1/transport/kmb/route-stop/",
-        "stop_list": "https://data.etabus.gov.hk/v1/transport/kmb/stop/",
-        "eta": "https://data.etabus.gov.hk/v1/transport/kmb/eta/",
-        "route_eta": "https://data.etabus.gov.hk/v1/transport/kmb/eta/route/{route}/{service_type}"
-    },
-    
-    # 城巴 API
-    "ctb": {
-        "stop_eta": "https://rt.data.gov.hk/v2/transport/citybus/eta/stop/{stop_id}"
-    },
-    
-    # 新大屿山 API
-    "nlb": {
-        "route_list": "https://rt.data.gov.hk/v2/transport/nlb/route.php?action=list",
-        "route_stop": "https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id}",
-        "eta": "https://rt.data.gov.hk/v2/transport/nlb/eta.php?action=estimate&routeId={route_id}"
-    }
-}
+// Mapbox 配置
+const MAPBOX_CONFIG = {
+    accessToken: 'YOUR_MAPBOX_TOKEN_HERE', // 替换为您的token
+    style: 'mapbox://styles/mapbox/streets-v12', // 地图样式
+    center: [114.1694, 22.3193], // 香港中心坐标 [lng, lat]
+    zoom: 12,
+    minZoom: 10,
+    maxZoom: 18
+};
 
-# 应用配置
-class Config:
-    SECRET_KEY = 'your-secret-key-here'
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///bus_tracker.db'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    CACHE_TYPE = 'simple'
-    UPDATE_INTERVAL = 30  # 数据更新间隔(秒)
-    MAX_ETA_AGE = 300     # ETA最大有效期(秒)
+// 后端API配置
+const API_CONFIG = {
+    baseUrl: 'http://localhost:5000/api', // 您的后端地址
+    endpoints: {
+        vehicles: '/vehicles',
+        routes: '/routes',
+        eta: '/eta',
+        stats: '/stats'
+    },
+    updateInterval: 15000, // 15秒更新一次
+    maxRetries: 3
+};
+
+// 公司颜色配置
+const COMPANY_COLORS = {
+    'KMB': '#E21836', // 九巴红
+    'CTB': '#1E5AA8', // 城巴蓝
+    'NLB': '#00A651', // 新大屿山绿
+    'LWB': '#FF6600', // 龙运橙
+    'GMB': '#6A1B9A'  // 小巴紫
+};
+
+// 车辆图标配置
+const VEHICLE_ICONS = {
+    moving: '🚌',
+    stopped: '⏸️',
+    delayed: '⚠️',
+    default: '📍'
+};
